@@ -1,2 +1,2 @@
 # CS4476
-projects from cs4476 @ gatech, taught by Frank Dellaert
+projects from undergrad computer vision course @ gatech, taught by Frank Dellaert
