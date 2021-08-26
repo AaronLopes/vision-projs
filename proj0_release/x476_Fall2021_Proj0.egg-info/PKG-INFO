@@ -1,0 +1,40 @@
+Metadata-Version: 1.2
+Name: x476-Fall2021-Proj0
+Version: 1.0.0
+Summary: UNKNOWN
+Home-page: https://dellaert.github.io/21F-x476/index.html
+Author: Georgia Institute of Technology
+Author-email: hgatewood6@gatech.edu
+License: MIT
+Description: # project0-fall2021
+        problem set 0: CV Fall 2021
+        
+        # Setting up the environment
+        For the projects of this course, we will be using `Miniconda` to setup and environment where you can see the project instructions through Jupyter notebook, write your code in Python, test against the unit tests and create the submission files. 
+        
+        ## Setup
+        We will be installing a **NEW** environment for this project; follow the instructions below to set up the env.
+        
+        1. Install [Miniconda](https://conda.io/miniconda.html). It doesn't matter whether you use Python 2 or 3 because we will create our own environment that uses 3 anyway.
+        2. Open Terminal 
+        * On Windows, open the installed "Conda prompt" to run the command. 
+        * On MacOS and Linux, you can just use a terminal window to run the command
+        Navigate to the folder where you have the project.
+        3. Create a conda environment using the appropriate command. 
+        * Modify the command based on your OS (`linux`, `mac`, or `win`): `conda env create -f proj0_env_<OS>.yml`
+        4. This should create an environment named `proj0`. To activate the environment:
+        * On Windows, use the command `activate proj0`
+        * On MacOS / Linux, use the command `source activate proj0` or `conda activate proj0`.
+        5. Install the project package, by running `pip install -e .` inside the folder. (The `.` at the end is of importance. Please do not forget to include it in the command.)
+        6. Run the notebook using `jupyter-notebook ./proj0_code/proj0.ipynb`.
+        
+Keywords: computer-vision
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: MacOS
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >= 3.6

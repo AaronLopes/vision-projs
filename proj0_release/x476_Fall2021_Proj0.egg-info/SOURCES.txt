@@ -1,0 +1,7 @@
+README.md
+setup.py
+x476_Fall2021_Proj0.egg-info/PKG-INFO
+x476_Fall2021_Proj0.egg-info/SOURCES.txt
+x476_Fall2021_Proj0.egg-info/dependency_links.txt
+x476_Fall2021_Proj0.egg-info/requires.txt
+x476_Fall2021_Proj0.egg-info/top_level.txt

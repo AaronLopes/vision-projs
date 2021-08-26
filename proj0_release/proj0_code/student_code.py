@@ -9,7 +9,7 @@ def vector_transpose(v: torch.Tensor) -> torch.Tensor:
 
 
     Useful functions:
-    -   
+    -  torch.transpose 
 
     Args:
     -   v: 3 x 1 torch.FloatTensor
@@ -18,17 +18,7 @@ def vector_transpose(v: torch.Tensor) -> torch.Tensor:
     -   v_t: 1 x 3 torch.FloatTensor
     """
     # v_t is the placeholder for the result
-    v_t = None
-
-    #############################################################################
-    # TODO: YOUR CODE HERE
-    ############################################################################
-
-    # TODO: remove the next line after implementing the function
-    raise NotImplementedError
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
+    v_t = torch.unsqueeze(v, 1)
     return v_t
 
 
@@ -54,18 +44,8 @@ def stack_images(red_channel_image: torch.Tensor,
     -   D: M x N x 3
     """
     # D is the placeholder for the result
-    color_image = None
-
-    #############################################################################
-    # TODO: YOUR CODE HERE
-    #############################################################################
-
-    # TODO: remove the next line after implementing the function
-    raise NotImplementedError
-
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
+    color_image = torch.cat((torch.unsqueeze(red_channel_image, 2), torch.unsqueeze(
+        green_channel_image, 2), torch.unsqueeze(blue_channel_image, 2)), 2)
     return color_image
 
 
@@ -90,17 +70,9 @@ def concat_images(X: torch.Tensor) -> torch.Tensor:
     -   D: 2M x 2N x 3 torch.FloatTensor
     """
     # D is the placeholder for the result
-    D = None
-
-    #############################################################################
-    # TODO: YOUR CODE HERE
-    #############################################################################
-
-    # TODO: remove the next line after implementing the function
-    raise NotImplementedError
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
+    R1 = torch.cat((X, X), 0)
+    R2 = torch.cat((X, X), 0)
+    D = torch.cat((R1, R2), 1)
     return D
 
 
@@ -121,15 +93,5 @@ def create_mask(X: torch.Tensor, val: float) -> torch.Tensor:
     -   mask: M x N torch.FloatTensor
     """
     # mask is the placeholder for the result
-    mask = None
-
-    #############################################################################
-    # TODO: YOUR CODE HERE
-    #############################################################################
-
-    # TODO: remove the next line after implementing the function
-    raise NotImplementedError
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
+    mask = torch.le(X, val) * 1
     return mask
