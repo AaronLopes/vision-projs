@@ -12,13 +12,13 @@ def vector_transpose(v: torch.Tensor) -> torch.Tensor:
     -  torch.transpose 
 
     Args:
-    -   v: 3 x 1 torch.FloatTensor
+    -   v: 1 x 3 torch.FloatTensor
 
     Returns:
-    -   v_t: 1 x 3 torch.FloatTensor
+    -   v_t: 3 x 1 torch.FloatTensor
     """
     # v_t is the placeholder for the result
-    v_t = torch.unsqueeze(v, 1)
+    v_t = torch.tensor([[v[0]], [v[1]], [v[2]]])
     return v_t
 
 
