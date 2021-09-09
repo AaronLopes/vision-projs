@@ -8,7 +8,7 @@
 - On Windows, open the installed "Anaconda Powershell Prompt".
 - On MacOS and Linux, you can open a terminal window.
 - Modify and run the command in the terminal, replace the “<OS>” in the following
-  command with your OS (Linux, Mac, Windows): conda env create -f
+  command with your OS (Linux, Mac, Windows): `conda env create -f proj1_configs/proj1_env_<OS>.yml`
 
 3. Check if the cv_proj1 environment has been created properly.
 
