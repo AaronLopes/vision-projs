@@ -1,0 +1,16 @@
+README.md
+setup.py
+CSx476_Fall2021_Proj1.egg-info/PKG-INFO
+CSx476_Fall2021_Proj1.egg-info/SOURCES.txt
+CSx476_Fall2021_Proj1.egg-info/dependency_links.txt
+CSx476_Fall2021_Proj1.egg-info/requires.txt
+CSx476_Fall2021_Proj1.egg-info/top_level.txt
+proj1_code/__init__.py
+proj1_code/student_code.py
+proj1_code/utils.py
+proj1_code/proj1_unit_tests/__init__.py
+proj1_code/proj1_unit_tests/test_2d.py
+proj1_code/proj1_unit_tests/test_create_1d_gaussian_kernel.py
+proj1_code/proj1_unit_tests/test_dft.py
+proj1_code/proj1_unit_tests/test_median_filter.py
+proj1_code/proj1_unit_tests/test_my_1d_filter.py

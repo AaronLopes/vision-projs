@@ -11,7 +11,6 @@ import torch.utils.data as data
 import torchvision
 
 
-# TODO - 1
 def create_1d_gaussian_kernel(standard_deviation: float) -> torch.FloatTensor:
     # Create a 1D Gaussian kernel using the specified standard deviation.
     # Note: ensure that the value of the kernel sums to 1.
@@ -20,19 +19,11 @@ def create_1d_gaussian_kernel(standard_deviation: float) -> torch.FloatTensor:
     #     standard_deviation (float): standard deviation of the gaussian
     # Returns:
     #     torch.FloatTensor: required kernel as a row vector
-
-    kernel = torch.FloatTensor()
-
-    #############################################################################
-    #                             YOUR CODE BELOW
-    #############################################################################
-
-    raise NotImplementedError
-
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
-
+    k = int(4 * standard_deviation + 1)
+    kernel = torch.arange(0, k)
+    mean = torch.floor(torch.tensor(k / 2))
+    kernel = torch.exp(-(kernel - mean)**2 / (2 * standard_deviation**2))
+    kernel = (1 / torch.sum(kernel)) * kernel
     return kernel
 
 
@@ -61,18 +52,20 @@ def my_1d_filter(signal: torch.FloatTensor,
     #     kernel (torch.FloatTensor): kernel to filter with. Shape=(K,)
     # Returns:
     #     torch.FloatTensor: filtered signal. Shape=(N,)
+    if kernel.size()[0] % 2 == 0:
+        kernel = torch.cat((kernel, torch.tensor([0]).float()))
 
-    filtered_signal = torch.FloatTensor()
+    kernal_size = kernel.shape[0]
+    pad_size = kernal_size // 2
+    signal_padded = F.pad(signal, (pad_size, pad_size), 'constant', 0)
+    signal_padded_size = signal_padded.size()[0]
+    signal_cross_corr = []
+    for i in range(signal_padded_size - kernal_size + 1):
+        slide = signal_padded[i:i + kernal_size]
+        slide_sum = torch.sum(torch.matmul(slide, kernel))
+        signal_cross_corr.append(slide_sum)
 
-    #############################################################################
-    #                             YOUR CODE BELOW
-    #############################################################################
-
-    raise NotImplementedError
-
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
+    filtered_signal = torch.tensor(signal_cross_corr).float()
 
     return filtered_signal
 
@@ -94,24 +87,14 @@ def create_2d_gaussian_kernel(standard_deviation: float) -> torch.FloatTensor:
     # Args:
     #     standard_deviation (float): the standard deviation along a dimension
     # Returns:
-    #     torch.FloatTensor: 2D Gaussian kernel
+    #     torch.FloatTensor: 2D (k, k) Gaussian kernel
     #
     # HINT:
     # - The 2D Gaussian kernel here can be calculated as the outer product of two
     #   vectors drawn from 1D Gaussian distributions.
 
-    kernel_2d = torch.Tensor()
-
-    #############################################################################
-    #                             YOUR CODE BELOW
-    #############################################################################
-
-    raise NotImplementedError
-
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
-
+    kernel = create_1d_gaussian_kernel(standard_deviation)
+    kernel_2d = torch.ger(kernel, kernel)
     return kernel_2d
 
 
@@ -135,21 +118,28 @@ def my_imfilter(image, image_filter, image_name="Image"):
     #  your code works.
     # - Useful functions: torch.nn.functional.pad
 
-    filtered_image = torch.Tensor()
+    k = image_filter.shape[0]
+    j = image_filter.shape[1]
 
-    assert image_filter.shape[0] % 2 == 1
-    assert image_filter.shape[1] % 2 == 1
+    assert k % 2 == 1
+    assert j % 2 == 1
 
-    #############################################################################
-    #                             YOUR CODE BELOW
-    #############################################################################
+    filtered_image = []
 
-    raise NotImplementedError
-
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
-
+    for c_i in range(image.shape[2]):
+        fil_chan = []
+        padded_channel = F.pad(
+            image[:, :, c_i], (k // 2, k // 2, j // 2, j // 2), 'constant', 0)
+        for row in range(padded_channel.shape[0] - k + 1):
+            fil_chan_row = []
+            for col in range(padded_channel.shape[1] - j + 1):
+                val = torch.sum(torch.mul(
+                    padded_channel[row:row + k, col:col + j], image_filter))
+                fil_chan_row.append(val)
+            fil_chan.append(fil_chan_row)
+        filtered_image.append(torch.tensor(fil_chan))
+    filtered_image = torch.stack(
+        (filtered_image[0], filtered_image[1], filtered_image[2]), dim=2)
     return filtered_image
 
 
@@ -188,16 +178,6 @@ def create_hybrid_image(image1, image2, filter):
     assert filter.shape[1] <= image1.shape[1]
     assert filter.shape[0] % 2 == 1
     assert filter.shape[1] % 2 == 1
-
-    #############################################################################
-    #                             YOUR CODE BELOW
-    #############################################################################
-
-    raise NotImplementedError
-
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
 
     return low_freq_image, high_freq_image, hybrid_image
 
