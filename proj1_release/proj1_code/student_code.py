@@ -11,6 +11,7 @@ import torch.utils.data as data
 import torchvision
 
 
+# TODO - 1
 def create_1d_gaussian_kernel(standard_deviation: float) -> torch.FloatTensor:
     # Create a 1D Gaussian kernel using the specified standard deviation.
     # Note: ensure that the value of the kernel sums to 1.
@@ -19,6 +20,7 @@ def create_1d_gaussian_kernel(standard_deviation: float) -> torch.FloatTensor:
     #     standard_deviation (float): standard deviation of the gaussian
     # Returns:
     #     torch.FloatTensor: required kernel as a row vector
+
     k = int(4 * standard_deviation + 1)
     kernel = torch.arange(0, k)
     mean = torch.floor(torch.tensor(k / 2))
@@ -52,6 +54,7 @@ def my_1d_filter(signal: torch.FloatTensor,
     #     kernel (torch.FloatTensor): kernel to filter with. Shape=(K,)
     # Returns:
     #     torch.FloatTensor: filtered signal. Shape=(N,)
+
     if kernel.size()[0] % 2 == 0:
         kernel = torch.cat((kernel, torch.tensor([0]).float()))
 
@@ -87,7 +90,7 @@ def create_2d_gaussian_kernel(standard_deviation: float) -> torch.FloatTensor:
     # Args:
     #     standard_deviation (float): the standard deviation along a dimension
     # Returns:
-    #     torch.FloatTensor: 2D (k, k) Gaussian kernel
+    #     torch.FloatTensor: 2D Gaussian kernel
     #
     # HINT:
     # - The 2D Gaussian kernel here can be calculated as the outer product of two
@@ -118,13 +121,13 @@ def my_imfilter(image, image_filter, image_name="Image"):
     #  your code works.
     # - Useful functions: torch.nn.functional.pad
 
-    k = image_filter.shape[0]
-    j = image_filter.shape[1]
-
-    assert k % 2 == 1
-    assert j % 2 == 1
+    assert image_filter.shape[0] % 2 == 1
+    assert image_filter.shape[1] % 2 == 1
 
     filtered_image = []
+
+    k = image_filter.shape[0]
+    j = image_filter.shape[1]
 
     for c_i in range(image.shape[2]):
         fil_chan = []
@@ -167,10 +170,6 @@ def create_hybrid_image(image1, image2, filter):
     # - If you want to use images with different dimensions, you should resize them
     #   in the notebook code.
 
-    hybrid_image = torch.Tensor()
-    low_freq_image = torch.Tensor()
-    high_freq_image = torch.Tensor()
-
     assert image1.shape[0] == image2.shape[0]
     assert image1.shape[1] == image2.shape[1]
     assert image1.shape[2] == image2.shape[2]
@@ -179,7 +178,12 @@ def create_hybrid_image(image1, image2, filter):
     assert filter.shape[0] % 2 == 1
     assert filter.shape[1] % 2 == 1
 
-    return low_freq_image, high_freq_image, hybrid_image
+    low_freq_image1 = my_imfilter(image1, filter)
+    high_freq_image2 = torch.sub(image2, my_imfilter(image2, filter))
+    hybrid_image = torch.clamp(
+        torch.add(low_freq_image1, high_freq_image2), 0, 1)
+
+    return low_freq_image1, high_freq_image2, hybrid_image
 
 
 # TODO - 6.1
@@ -201,16 +205,14 @@ def make_dataset(path: str) -> Tuple[List[str], List[str]]:
     images_a = []
     images_b = []
 
-    #############################################################################
-    #                             YOUR CODE BELOW
-    #############################################################################
-
-    raise NotImplementedError
-
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
-
+    for f in os.listdir(path):
+        if f.endswith('.bmp') and f[0].isdigit():
+            if f[1] == 'a':
+                images_a.append(path + '/' + f)
+            if f[1] == 'b':
+                images_b.append(path + '/' + f)
+    images_a.sort()
+    images_b.sort()
     return images_a, images_b
 
 
@@ -227,17 +229,9 @@ def get_cutoff_standardddeviations(path: str) -> List[int]:
     #         length as the number of image pairs in the dataset
 
     cutoffs = []
-
-    #############################################################################
-    #                             YOUR CODE BELOW
-    #############################################################################
-
-    raise NotImplementedError
-
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
-
+    with open(path, 'r') as f:
+        for sd in f:
+            cutoffs.append(int(sd))
     return cutoffs
 
 # TODO - 6.3
@@ -259,37 +253,16 @@ class HybridImageDataset(data.Dataset):
         #     cf_file: string specifying the path to the .txt file with cutoff
         #         standard deviation values
 
-        images_a, images_b = make_dataset(image_dir)
+        self.images_a, self.images_b = make_dataset(image_dir)
 
-        cutoffs = get_cutoff_standardddeviations(cf_file)
+        self.cutoffs = get_cutoff_standardddeviations(cf_file)
 
-        self.transform = None
-
-        #############################################################################
-        #                             YOUR CODE BELOW
-        #############################################################################
-
-        if self.transform is None:
-            raise NotImplementedError
-
-        #############################################################################
-        #                             END OF YOUR CODE
-        #############################################################################
+        self.transform = torchvision.transforms.Compose(
+            [torchvision.transforms.ToTensor()])
 
     def __len__(self) -> int:
         # Return the number of pairs of images in dataset
-
-        #############################################################################
-        #                             YOUR CODE BELOW
-        #############################################################################
-
-        raise NotImplementedError
-
-        #############################################################################
-        #                             END OF YOUR CODE
-        #############################################################################
-
-        return 0
+        return int(np.floor((len(self.images_a) + len(self.images_b)) // 2))
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, int]:
         # Return the pair of images and corresponding cutoff standard deviation
@@ -317,19 +290,11 @@ class HybridImageDataset(data.Dataset):
         # - You should use the PIL library to read images
         # - You will use self.transform to convert the PIL image to a torch Tensor
 
-        image_a = torch.Tensor()
-        image_b = torch.Tensor()
-        cutoff = 0
-
-        #############################################################################
-        #                             YOUR CODE BELOW
-        #############################################################################
-
-        raise NotImplementedError
-
-        #############################################################################
-        #                             END OF YOUR CODE
-        #############################################################################
+        image_a = PIL.Image.open(self.images_a[idx])
+        image_a = self.transform(image_a)
+        image_b = PIL.Image.open(self.images_b[idx])
+        image_b = self.transform(image_b)
+        cutoff = self.cutoffs[idx]
 
         return image_a, image_b, cutoff
 
@@ -364,17 +329,9 @@ class HybridImageModel(nn.Module):
         # - You can use torch.reshape() to change the dimensions of the tensor.
         # - You can use torch's repeat() to repeat a tensor along specified axes.
 
-        kernel = torch.Tensor()
-
-        #############################################################################
-        #                             YOUR CODE BELOW
-        #############################################################################
-
-        raise NotImplementedError
-
-        #############################################################################
-        #                             END OF YOUR CODE
-        #############################################################################
+        kernel = create_2d_gaussian_kernel(cutoff_standarddeviation)
+        kernel = kernel.reshape(1, 1, kernel.shape[0], kernel.shape[0])
+        kernel = kernel.repeat(self.n_channels, 1, 1, 1)
 
         return kernel
 
@@ -395,17 +352,8 @@ class HybridImageModel(nn.Module):
         #   convolution function. This represents the # of channels that the filter
         #   will be applied to.
 
-        filtered_image = torch.Tensor()
-
-        #############################################################################
-        #                             YOUR CODE BELOW
-        #############################################################################
-
-        raise NotImplementedError
-
-        #############################################################################
-        #                             END OF YOUR CODE
-        #############################################################################
+        filtered_image = F.conv2d(input=x, weight=kernel, padding=(
+            kernel.shape[2] // 2, kernel.shape[2] // 2), groups=self.n_channels)
 
         return filtered_image
 
@@ -433,19 +381,12 @@ class HybridImageModel(nn.Module):
 
         self.n_channels = image1.shape[1]
 
-        low_frequencies = torch.Tensor()
-        high_frequencies = torch.Tensor()
-        hybrid_image = torch.Tensor()
-
-        #############################################################################
-        #                             YOUR CODE BELOW
-        #############################################################################
-
-        raise NotImplementedError
-
-        #############################################################################
-        #                             END OF YOUR CODE
-        #############################################################################
+        image_filter = self.get_kernel(cutoff_standarddeviation)
+        low_frequencies = self.low_pass(image1, image_filter)
+        high_frequencies = torch.sub(
+            image2, self.low_pass(image2, image_filter))
+        hybrid_image = torch.clamp(
+            torch.add(low_frequencies, high_frequencies), 0, 1)
 
         return low_frequencies, high_frequencies, hybrid_image
 
@@ -478,18 +419,24 @@ def my_median_filter(image: torch.FloatTensor, filter_size: Union[tuple, int]) -
     assert filter_size[0] % 2 == 1
     assert filter_size[1] % 2 == 1
 
-    filtered_image = torch.Tensor()
+    k = filter_size[0]
+    j = filter_size[1]
 
-    ############################################################################
-    # TODO: YOUR CODE HERE
-    ############################################################################
+    if len(image.size()) == 3:
+        c = 1
+        image = image[:, :, 1]
 
-    raise NotImplementedError
-
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
-    return filtered_image
+    padded_img = F.pad(
+        image, (k // 2, k // 2, j // 2, j // 2), 'constant', 0)
+    img = []
+    for row in range(padded_img.shape[0] - k + 1):
+        fil_chan_row = []
+        for col in range(padded_img.shape[1] - j + 1):
+            val = torch.median(padded_img[row:row + k, col:col + j])
+            fil_chan_row.append(val)
+        img.append(fil_chan_row)
+    filtered_image = torch.tensor(img)
+    return filtered_image.unsqueeze(2)
 
 
 #############################################################################

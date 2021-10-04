@@ -1,4 +1,3 @@
-README.md
 setup.py
 CSx476_Fall2021_Proj1.egg-info/PKG-INFO
 CSx476_Fall2021_Proj1.egg-info/SOURCES.txt

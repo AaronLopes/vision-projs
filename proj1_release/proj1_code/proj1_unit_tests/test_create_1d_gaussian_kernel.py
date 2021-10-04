@@ -34,5 +34,4 @@ def test_create_kernel_with_sigma_int():
 def test_kernel_sum():
     computed_kernel = create_1d_gaussian_kernel(30)
 
-    assert torch.allclose(torch.tensor(
-        [1]).float(), torch.sum(computed_kernel))
+    assert torch.allclose(torch.tensor([1]).float(), torch.sum(computed_kernel))

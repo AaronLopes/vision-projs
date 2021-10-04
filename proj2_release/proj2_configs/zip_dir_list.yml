@@ -1,0 +1,8 @@
+required_directories:
+required_files:
+  - proj2_code/student_code.py
+  - proj2_code/utils.py
+optional_directories:
+  - additional_data
+optional_files:
+  - README.txt
