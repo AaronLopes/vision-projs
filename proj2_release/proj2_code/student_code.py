@@ -1,6 +1,8 @@
 import segmentation_models_pytorch as smp
 import albumentations as albu
 import torch
+from torch._C import dtype
+from torch.utils.data.dataset import BufferedShuffleDataset
 import utils as utils
 import torchinfo as torchinfo
 import os
@@ -15,8 +17,8 @@ DEVICE = 'cpu'
 # TO-DO 1
 def sigmoid(x):
     '''
-    Implement the sigmoid function using the formula given in the proj2 notebook. 
-    You are not allowed to use any pre-defined sigmoid function from any library. 
+    Implement the sigmoid function using the formula given in the proj2 notebook.
+    You are not allowed to use any pre-defined sigmoid function from any library.
 
     Args:
         x: N x 1 torch.FloatTensor
@@ -31,8 +33,8 @@ def sigmoid(x):
 # TO-DO 2
 def softmax(x):
     '''
-    Implement the softmax function using the formula given in the proj2 notebook. 
-    You are not allowed to use any pre-defined softmax function from any library. 
+    Implement the softmax function using the formula given in the proj2 notebook.
+    You are not allowed to use any pre-defined softmax function from any library.
 
     Args:
         x: N x 1 torch.FloatTensor
@@ -50,13 +52,13 @@ def softmax(x):
 # TO-DO 3
 def apply_mask_to_image(image, mask):
     '''
-    Applies segmentation mask of image to the original image to produce the final segmented image. 
+    Applies segmentation mask of image to the original image to produce the final segmented image.
 
     For this function, we will be applying the color red to the final segmented image.
 
     You will need to implement these steps:
     1.) Make `mask` the same shape as `image` such that each channel in the resulting `colored_mask` is equal to `mask`.
-    2.) Perform broadcast multiplication on `mask` with the red color list in the `colors` dictionary. 
+    2.) Perform broadcast multiplication on `mask` with the red color list in the `colors` dictionary.
         The resulting `colored_mask` should contain values different from 0 in the red channel of the mask ONLY.
     3.) Combine `image` and `colored_mask` by performing element-wise summation, and return the result as type integer.
     4.) Make sure all values in the `final_seg_img` fall between 0 and 255.
@@ -65,35 +67,34 @@ def apply_mask_to_image(image, mask):
     image = torch.from_numpy(image).type(torch.int64)
     mask = torch.from_numpy(mask).type(torch.int64)
     colors = {"red": torch.Tensor([255, 0, 0])}
-    colored_mask = torch.stack((mask, mask, mask))
+    mask = mask.squeeze()
+    colored_mask = torch.stack((mask, mask, mask), 2)
     colored_mask = colored_mask * colors['red']
-    print(colored_mask.shape)
-    print(image.shape)
-    final_seg_img = torch.sum(image + colored_mask)
+    final_seg_img = image + colored_mask
 
-    return final_seg_img
+    return torch.clamp(final_seg_img.int(), min=0, max=255)
 
 
 # TO-DO 4
 def load_FPN_resnet50():
     '''
-    Repeat the steps at the beginning of Section 2.2: VGG-19 for the ResNet-50 model to see 
-    how well it performs in the cell below. 
+    Repeat the steps at the beginning of Section 2.2: VGG-19 for the ResNet-50 model to see
+    how well it performs in the cell below.
 
-    You will keep the same `classes`, and `activation` function. But, you will need to change 
-    the `encoder_name` to `"resnet50"` to load the ResNet-50 model from `segmentation_models_pytorch`. 
+    You will keep the same `classes`, and `activation` function. But, you will need to change
+    the `encoder_name` to `"resnet50"` to load the ResNet-50 model from `segmentation_models_pytorch`.
 
     Please see the `models/` directory for the appropriate saved weights file for the ResNet-50 model.
     '''
-    #############################################################################
-    #                             YOUR CODE BELOW
-    #############################################################################
 
-    raise NotImplementedError
-
-    #############################################################################
-    #                             END OF YOUR CODE
-    #############################################################################
+    # create segmentation model with pretrained vgg-19
+    resnet50_model = smp.FPN(
+        encoder_name='resnet50',
+        classes=1,
+        activation='sigmoid',
+    )
+    resnet50_model.load_state_dict(torch.load(
+        './models/resnet50_best_model_weights.pt', map_location=torch.device('cpu')))
     return resnet50_model
 
 # TO-DO 5
@@ -108,35 +109,28 @@ def IoU(predict: torch.Tensor, target: torch.Tensor):
         target: MxN torch tensor representing ground truth label map,
             each value in range 0 to 1.
 
-    Returns: Float/Double that represent the IoU score
+    Returns: Float/Double in torch.Tensor that represent the IoU score
     """
 
-    ###########################################################################
-    # TODO: YOUR CODE HERE                                                    #
-    ###########################################################################
+    intersection = (predict & target).sum((0, 1))
+    union = (predict | target).sum((0, 1))
 
-    raise NotImplementedError('`IoU()` function in ' +
-                              '`student_code.py` needs to be implemented')
-
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
-    return IoU
+    return intersection/union
 
 # TO-DO 6
 
 
 def applyIoU(model: smp.fpn.model, dataset: utils.Dataset):
     """
-    Apply the IoU function you wrote above to evaluate the performance 
+    Apply the IoU function you wrote above to evaluate the performance
     of the input model on the input dataset.
 
-    Hint: true_mask is a np.ndarray. You will need to convert it to torch.Tensor; 
+    Hint: true_mask is a np.ndarray. You will need to convert it to torch.Tensor;
     otherwise, you will get an AssertionError.
 
-    Args: 
+    Args:
         model: the smp model that you will evaluate
-        dataset: the dataset that model will be tested on; 
+        dataset: the dataset that model will be tested on;
                  It contains N (image, true mask) pair
     Returns:
         IoU_score: N Iou scores, one score corresponding to one pair
@@ -145,18 +139,18 @@ def applyIoU(model: smp.fpn.model, dataset: utils.Dataset):
 
     IoU_score = []
 
-    ###########################################################################
-    # TODO: YOUR CODE HERE                                                    #
-    ###########################################################################
+    for i in range(len(dataset)):
+        image, true_mask = dataset[i]
 
-    raise NotImplementedError('`applyIoU()` function in ' +
-                              '`student_code.py` needs to be implemented')
-
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
-
-    assert type(true_mask) == torch.Tensor
+        x_tensor = torch.from_numpy(image).to('cpu').unsqueeze(0)
+        pred_mask = model.predict(x_tensor)
+        pred_mask = pred_mask.squeeze().cpu().numpy().round()
+        true_mask = true_mask.round()
+        true_mask = torch.from_numpy(true_mask).long()
+        assert type(true_mask) == torch.Tensor
+        iou_score = IoU(torch.from_numpy(pred_mask).long(), true_mask)
+        iou_score = np.nanmean(iou_score.cpu().numpy())
+        IoU_score.append(iou_score)
 
     return IoU_score
 
@@ -167,29 +161,29 @@ def compare_psp_fpn(test_dataset):
     """
     Step 1: get FPN segmentation model with resnet50 from above
     Step 2: create PSP segmentation model with pretrained resnet50 for PSP
-    Step 3: Get the IoU score 
+    Step 3: Get the IoU score
 
     Args:
         x_dir, y_dir: the input for FCN-ResNet50 function
         test_dataset: the dataset that we will use to find out IoU score
 
     Returns:
-        psp_iou: the IoU score for the PSPNet with Resnet50 
+        psp_iou: the IoU score for the PSPNet with Resnet50
         fpn_iou: the IoU score for the FPN with Resnet50
 
 
     """
 
-    ###########################################################################
-    # TODO: YOUR CODE HERE                                                    #
-    ###########################################################################
-
-    raise NotImplementedError('`compare_psp_fpn()` function in ' +
-                              '`student_code.py` needs to be implemented')
-
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    fpn = load_FPN_resnet50()
+    psp = smp.PSPNet(
+        encoder_name='resnet50',
+        classes=1,
+        activation='sigmoid',
+    )
+    psp.load_state_dict(torch.load(
+        './models/pspnet_resnet50_best_model_weights.pt', map_location=torch.device('cpu')))
+    psp_iou = applyIoU(psp, test_dataset)
+    fpn_iou = applyIoU(fpn, test_dataset)
 
     return psp_iou, fpn_iou
 
@@ -211,7 +205,7 @@ def load_model(decoder_weights_path=None):
 
     model.load_state_dict(torch.load(
         'models/{}_best_model_weights.pt'.format(ENCODER), map_location=torch.device('cpu')))
-    #model.load_state_dict(torch.load(decoder_weights_path, map_location=torch.device('cpu')))
+    # model.load_state_dict(torch.load(decoder_weights_path, map_location=torch.device('cpu')))
     return model
 
 
