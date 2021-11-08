@@ -128,6 +128,24 @@ def second_moments(
     Iyy = Iy**2
     Ixy = Ix * Iy
     # Create convolutional layer
+
+    sx2 = torch.nn.functional.conv2d(
+        Ixx[None, None, :],
+        gaussian_filter,
+        padding=(ksize // 2, ksize // 2)
+    )
+    sy2 = torch.nn.functional.conv2d(
+        Iyy[None, None, :],
+        gaussian_filter,
+        padding=(ksize // 2, ksize // 2)
+    )
+    sxsy = torch.nn.functional.conv2d(
+        Ixy[None, None, :],
+        gaussian_filter,
+        padding=(ksize // 2, ksize // 2)
+    )
+
+    """
     conv2d = nn.Conv2d(
         in_channels=1,
         out_channels=1,
@@ -136,11 +154,14 @@ def second_moments(
         padding=(ksize // 2, ksize // 2),
         padding_mode='zeros'
     )
+    
 
     conv2d.weight = torch.nn.Parameter(gaussian_filter)
     sx2 = conv2d(Ixx[None, None, :]).detach()
     sy2 = conv2d(Iyy[None, None, :]).detach()
     sxsy = conv2d(Ixy[None, None, :]).detach()
+
+    """
 
     return sx2[0][0], sy2[0][0], sxsy[0][0]
 
