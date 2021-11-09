@@ -128,24 +128,6 @@ def second_moments(
     Iyy = Iy**2
     Ixy = Ix * Iy
     # Create convolutional layer
-
-    sx2 = torch.nn.functional.conv2d(
-        Ixx[None, None, :],
-        gaussian_filter,
-        padding=(ksize // 2, ksize // 2)
-    )
-    sy2 = torch.nn.functional.conv2d(
-        Iyy[None, None, :],
-        gaussian_filter,
-        padding=(ksize // 2, ksize // 2)
-    )
-    sxsy = torch.nn.functional.conv2d(
-        Ixy[None, None, :],
-        gaussian_filter,
-        padding=(ksize // 2, ksize // 2)
-    )
-
-    """
     conv2d = nn.Conv2d(
         in_channels=1,
         out_channels=1,
@@ -154,14 +136,11 @@ def second_moments(
         padding=(ksize // 2, ksize // 2),
         padding_mode='zeros'
     )
-    
 
     conv2d.weight = torch.nn.Parameter(gaussian_filter)
     sx2 = conv2d(Ixx[None, None, :]).detach()
     sy2 = conv2d(Iyy[None, None, :]).detach()
     sxsy = conv2d(Ixy[None, None, :]).detach()
-
-    """
 
     return sx2[0][0], sy2[0][0], sxsy[0][0]
 
@@ -221,16 +200,16 @@ def maxpool_numpy(R: torch.tensor, ksize: int) -> torch.tensor:
     Returns:
         maxpooled_R: array of shape (M,N) representing the maxpooled 2d score/response map
     """
-    #############################################################################
-    # TODO: YOUR CODE HERE                                                      #                                          #
-    #############################################################################
-    raise NotImplementedError('`maxpool_numpy` function in ' +
-                              '`student_sift.py` needs to be implemented')
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
-
-# TODO 4.2
+    padded_R = nn.functional.pad(
+        R, (ksize // 2, ksize // 2, ksize // 2, ksize // 2), 'constant', 0)
+    maxpooled_R = []
+    for r in range(padded_R.shape[0] - ksize + 1):
+        pooled_row = []
+        for c in range(padded_R.shape[1] - ksize + 1):
+            val = torch.max(padded_R[r:r + ksize, c:c + ksize])
+            pooled_row.append(val)
+        maxpooled_R.append(pooled_row)
+    return torch.tensor(maxpooled_R)
 
 
 def nms_maxpool_pytorch(R: torch.tensor, k: int, ksize: int) -> Tuple[torch.tensor, torch.tensor, torch.tensor]:
@@ -263,14 +242,10 @@ def nms_maxpool_pytorch(R: torch.tensor, k: int, ksize: int) -> Tuple[torch.tens
         y: array of shape (k,) containing y-coordinates of interest points
         c: array of shape (k,) containing confidences of interest points
     """
-    #############################################################################
-    # TODO: YOUR CODE HERE                                                      #                                          #
-    #############################################################################
-    raise NotImplementedError('`nms_maxpool_pytorch` function in ' +
-                              '`student_sift.py` needs to be implemented')
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    median = torch.median(R)
+    R[R < median] = 0
+    m = torch.nn.MaxPool2d(ksize)
+    maxpooled_R = m(R)
 
 
 # TODO 5.1
