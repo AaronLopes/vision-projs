@@ -375,10 +375,15 @@ def get_gradient_histogram_vec_from_patch(window_magnitudes: torch.tensor, windo
         wgh: (128,1) representing weighted gradient histograms for all 16
             neighborhoods of size 4x4 px
     """
-    magnitudes, orientations = get_magnitudes_and_orientations(
-        window_magnitudes, window_orientations)
-    bin_vals = []
-
+    wgh = []
+    for i in range(0, 16, 4):
+        for j in range(0, 16, 4):
+            orientations = window_orientations[i:i + 4, j:j + 4]
+            magnitudes = window_magnitudes[i:i + 4, j:j + 4]
+            hist = np.histogram(
+                a=orientations, bins=8, range=(-np.pi - 1 * 10**-6, np.pi), weights=magnitudes)
+            wgh.append(hist[0])
+    wgh = np.reshape(wgh, (128, 1))
     return torch.from_numpy(wgh)
 
 
@@ -431,15 +436,18 @@ def get_feat_vec(
     """
 
     fv = []  # placeholder
-    #############################################################################
-    # TODO: YOUR CODE HERE                                                      #                                          #
-    #############################################################################
-    raise NotImplementedError('`get_feat_vec` function in ' +
-                              '`student_sift.py` needs to be implemented')
+    y_1 = x - feature_width // 2 + 1
+    x_1 = y - feature_width // 2 + 1
+    y_2 = x + feature_width // 2 + 1
+    x_2 = y + feature_width // 2 + 1
+    magnitude_patch = magnitudes[x_1:x_2, y_1:y_2]
+    orientation_patch = orientations[x_1:x_2, y_1:y_2]
+    fv = get_gradient_histogram_vec_from_patch(
+        magnitude_patch, orientation_patch)
+    fv = fv / torch.norm(fv)
+    fv = torch.sqrt(fv)
+    fv = torch.reshape(fv, (128, 1))
 
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
     return fv
 
 
@@ -471,16 +479,15 @@ def get_SIFT_descriptors(
             These are the computed features.
     """
     assert image_bw.ndim == 2, 'Image must be grayscale'
-    #############################################################################
-    # TODO: YOUR CODE HERE                                                      #                                          #
-    #############################################################################
 
-    raise NotImplementedError('`get_features` function in ' +
-                              '`student_sift.py` needs to be implemented')
-
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    fvs = []
+    Ix, Iy = compute_image_gradients(image_bw)
+    magnitudes, orientations = get_magnitudes_and_orientations(Ix, Iy)
+    for i in range(X.shape[0]):
+        fvs.append(get_feat_vec(
+            X[i], Y[i], magnitudes, orientations, feature_width).numpy())
+    fvs = np.reshape(fvs, (X.shape[0], 128))
+    fvs = torch.from_numpy(fvs)
     return fvs
 
 # TODO 10
@@ -489,6 +496,8 @@ def get_SIFT_descriptors(
 def compute_feature_distances(
     features1: torch.tensor,
     features2: torch.tensor
+
+
 ) -> torch.tensor:
     """
     This function computes a list of distances from every feature in one array

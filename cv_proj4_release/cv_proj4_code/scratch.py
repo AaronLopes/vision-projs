@@ -67,7 +67,9 @@ window_orientations = np.array(
 window_magnitudes = torch.from_numpy(window_magnitudes)
 window_orientations = torch.from_numpy(window_orientations)
 
-hist = np.histogram()
+# hist = np.histogram()
+
+print(A)
 
 print(window_magnitudes.shape)
 print(window_orientations.shape)
