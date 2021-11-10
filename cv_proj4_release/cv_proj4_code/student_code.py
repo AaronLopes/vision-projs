@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import numpy as np
-from torch import nn
+from torch import dist, nn, threshold
 import torch
 from typing import Tuple
 import copy
@@ -436,12 +436,12 @@ def get_feat_vec(
     """
 
     fv = []  # placeholder
-    y_1 = x - feature_width // 2 + 1
-    x_1 = y - feature_width // 2 + 1
-    y_2 = x + feature_width // 2 + 1
-    x_2 = y + feature_width // 2 + 1
-    magnitude_patch = magnitudes[x_1:x_2, y_1:y_2]
-    orientation_patch = orientations[x_1:x_2, y_1:y_2]
+    x_1 = x - feature_width // 2 + 1
+    y_1 = y - feature_width // 2 + 1
+    x_2 = x + feature_width // 2 + 1
+    y_2 = y + feature_width // 2 + 1
+    magnitude_patch = magnitudes[y_1:y_2, x_1:x_2]
+    orientation_patch = orientations[y_1:y_2, x_1:x_2]
     fv = get_gradient_histogram_vec_from_patch(
         magnitude_patch, orientation_patch)
     fv = fv / torch.norm(fv)
@@ -483,9 +483,10 @@ def get_SIFT_descriptors(
     fvs = []
     Ix, Iy = compute_image_gradients(image_bw)
     magnitudes, orientations = get_magnitudes_and_orientations(Ix, Iy)
+    print(X.shape[0])
     for i in range(X.shape[0]):
         fvs.append(get_feat_vec(
-            X[i], Y[i], magnitudes, orientations, feature_width).numpy())
+            Y[i], X[i], magnitudes, orientations, feature_width).numpy())
     fvs = np.reshape(fvs, (X.shape[0], 128))
     fvs = torch.from_numpy(fvs)
     return fvs
@@ -522,24 +523,19 @@ def compute_feature_distances(
             in features2
     """
 
-    ###########################################################################
-    # TODO: YOUR CODE HERE                                                    #
-    ###########################################################################
-
-    raise NotImplementedError('`match_features` function in ' +
-                              '`student_feature_matching.py` needs to be implemented')
-
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
-
-    return dists
+    dists = []
+    for i in range(features1.shape[0]):
+        dists.append(np.linalg.norm(features1[i] - features2, axis=1))
+    dists = np.array(dists)
+    return torch.from_numpy(dists)
 
 
 # TODO 11
 def match_features_ratio_test(
     features1: torch.tensor,
     features2: torch.tensor
+
+
 ) -> Tuple[torch.tensor, torch.tensor]:
     """ Nearest-neighbor distance ratio feature matching.
 
@@ -571,15 +567,27 @@ def match_features_ratio_test(
     'matches' and 'confidences' can be empty e.g. (0x2) and (0x1)
     """
 
-    ###########################################################################
-    # TODO: YOUR CODE HERE                                                    #
-    ###########################################################################
+    distances = compute_feature_distances(features1, features2)
+    m, c = [], []
+    threshold = 0.75
+    for i in range(distances.shape[0]):  # rows
+        m1 = distances[i][0]
+        m2 = distances[i][0]
+        for j in range(distances.shape[1]):  # cols
+            if (distances[i][j] < m1):
+                m2 = m1
+                m1 = distances[i][j]
+                match = [i, j]
+            elif (distances[i][j] < m2 and distances[i][j] > m1):
+                m2 = distances[i][j]
+            else:
+                match = [0, 0]
+        x = m1 / m2
+        if (x < threshold):
+            m.append(match)
+            c.append(x)
 
-    raise NotImplementedError('`match_features` function in ' +
-                              '`student_feature_matching.py` needs to be implemented')
-
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    matches = torch.tensor(m)
+    confidences = torch.tensor(c)
 
     return matches, confidences
