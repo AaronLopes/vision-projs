@@ -480,10 +480,10 @@ def get_SIFT_descriptors(
     """
     assert image_bw.ndim == 2, 'Image must be grayscale'
 
+    print(X.shape[0])
     fvs = []
     Ix, Iy = compute_image_gradients(image_bw)
     magnitudes, orientations = get_magnitudes_and_orientations(Ix, Iy)
-    print(X.shape[0])
     for i in range(X.shape[0]):
         fvs.append(get_feat_vec(
             Y[i], X[i], magnitudes, orientations, feature_width).numpy())
