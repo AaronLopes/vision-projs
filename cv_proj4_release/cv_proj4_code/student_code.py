@@ -261,8 +261,8 @@ def nms_maxpool_pytorch(R: torch.tensor, k: int, ksize: int) -> Tuple[torch.tens
     masked_R = R * binary_R
     o, i = torch.topk(masked_R[0][0].flatten(), k)
     indices = np.array(np.unravel_index(i.numpy(), masked_R[0][0].shape)).T
-    x = torch.tensor(indices[:, 0])
-    y = torch.tensor(indices[:, 1])
+    x = torch.tensor(indices[:, 1])
+    y = torch.tensor(indices[:, 0])
     return x, y, o
 
 
@@ -290,15 +290,23 @@ def remove_border_vals(
         c: array of shape (p,)
     """
 
-    #############################################################################
-    # TODO: YOUR CODE HERE                                                      #                                          #
-    #############################################################################
+    pruned_x = []
+    pruned_y = []
+    pruned_c = []
+    x = x.numpy()
+    y = y.numpy()
+    for x_i in x:
+        if x_i >= 7 and x_i < img.shape[1] - 8 and x_i not in pruned_x:
+            pruned_x.append(x_i)
 
-    raise NotImplementedError('`remove_border_vals` in `HarrisNet.py` needs '
-                              + 'to be implemented')
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    for y_i in y:
+        if y_i >= 7 and y_i < img.shape[0] - 8 and y_i not in pruned_y:
+            pruned_y.append(y_i)
+    if len(pruned_x) == len(pruned_y):
+        for i in range(len(pruned_x)):
+            pruned_c.append(img[pruned_x[i]][pruned_y[i]])
+
+    return torch.tensor(pruned_x), torch.tensor(pruned_y), torch.tensor(pruned_c)
 
 
 # TODO 5.2
@@ -316,14 +324,11 @@ def get_harris_interest_points(image_bw: torch.tensor, k: int = 2500) -> Tuple[t
         y: array of shape (p,) containing y-coordinates of interest points
         confidences: array of dim (p,) containing the strength of each interest point
     """
-    #############################################################################
-    # TODO: YOUR CODE HERE                                                      #                                          #
-    #############################################################################
-    raise NotImplementedError('`get_harris_interest_points` in `HarrisNet.py` needs '
-                              + 'to be implemented')
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    R = compute_harris_response_map(image_bw)
+    x_interest, y_interest, confidences = nms_maxpool_pytorch(R, k, ksize=7)
+    x, y, c = remove_border_vals(image_bw, x_interest, y_interest, confidences)
+
+    return x, y, c
 
 # TODO 6
 
