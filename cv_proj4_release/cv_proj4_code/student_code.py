@@ -290,23 +290,12 @@ def remove_border_vals(
         c: array of shape (p,)
     """
 
-    pruned_x = []
-    pruned_y = []
-    pruned_c = []
-    x = x.numpy()
-    y = y.numpy()
-    for x_i in x:
-        if x_i >= 7 and x_i < img.shape[1] - 8 and x_i not in pruned_x:
-            pruned_x.append(x_i)
-
-    for y_i in y:
-        if y_i >= 7 and y_i < img.shape[0] - 8 and y_i not in pruned_y:
-            pruned_y.append(y_i)
-    if len(pruned_x) == len(pruned_y):
-        for i in range(len(pruned_x)):
-            pruned_c.append(img[pruned_x[i]][pruned_y[i]])
-
-    return torch.tensor(pruned_x), torch.tensor(pruned_y), torch.tensor(pruned_c)
+    mask = (x >= 7) & (x < (img.shape[0] - 8)
+                       ) & (y >= 7) & (y < (img.shape[1] - 8))
+    x = x[mask]
+    y = y[mask]
+    c = c[mask]
+    return x, y, c
 
 
 # TODO 5.2
@@ -326,8 +315,9 @@ def get_harris_interest_points(image_bw: torch.tensor, k: int = 2500) -> Tuple[t
     """
     R = compute_harris_response_map(image_bw)
     x_interest, y_interest, confidences = nms_maxpool_pytorch(R, k, ksize=7)
-    x, y, c = remove_border_vals(image_bw, x_interest, y_interest, confidences)
-
+    normalized_c = torch.div(confidences, torch.max(confidences))
+    x, y, c = remove_border_vals(
+        image_bw, x_interest, y_interest, normalized_c)
     return x, y, c
 
 # TODO 6
@@ -351,16 +341,10 @@ def get_magnitudes_and_orientations(Ix: torch.tensor, Iy: torch.tensor) -> Tuple
     magnitudes = []  # placeholder
     orientations = []  # placeholder
 
-    #############################################################################
-    # TODO: YOUR CODE HERE                                                      #                                          #
-    #############################################################################
+    inner = Ix**2 + Iy**2
+    magnitudes = torch.sqrt(inner)
+    orientations = torch.atan2(Iy, Ix)
 
-    raise NotImplementedError('`get_magnitudes_and_orientations` function in ' +
-                              '`part2_sift_descriptor.py` needs to be implemented')
-
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
     return magnitudes, orientations
 
 
@@ -391,16 +375,8 @@ def get_gradient_histogram_vec_from_patch(window_magnitudes: torch.tensor, windo
         wgh: (128,1) representing weighted gradient histograms for all 16
             neighborhoods of size 4x4 px
     """
-    #############################################################################
-    # TODO: YOUR CODE HERE                                                      #                                          #
-    #############################################################################
-
-    raise NotImplementedError('`get_gradient_histogram_vec_from_patch` function in ' +
-                              '`student_sift.py` needs to be implemented')
-
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    magnitudes, orientations = get_magnitudes_and_orientations(
+        window_magnitudes, window_orientations)
 
     return torch.from_numpy(wgh)
 
