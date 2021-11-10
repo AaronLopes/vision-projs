@@ -377,6 +377,7 @@ def get_gradient_histogram_vec_from_patch(window_magnitudes: torch.tensor, windo
     """
     magnitudes, orientations = get_magnitudes_and_orientations(
         window_magnitudes, window_orientations)
+    bin_vals = []
 
     return torch.from_numpy(wgh)
 
