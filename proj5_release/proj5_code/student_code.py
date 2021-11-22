@@ -261,8 +261,11 @@ def get_visual_odometry(images_path) -> List[np.ndarray]:
 
     """
     img_fpaths = []
-
-
+    for f in os.listdir(images_path):
+        fpath = os.path.join(images_path, f)
+        if os.path.isfile(fpath):
+            img_fpaths.append(fpath)
+    img_fpaths.sort()
     num_imgs = len(img_fpaths)
     K = load_log_front_center_intrinsics()
 
@@ -319,18 +322,9 @@ def compute_absolute_poses(iCurrTiPrev: List[np.ndarray]) -> List[np.ndarray]:
 
     poses_wTi = []
     poses_wTi += [np.eye(4)]  # initial pose wTi(1) is set to identity matrix.
-
-    #######################################################################
-    # TODO: YOUR CODE HERE                                                #
-    #######################################################################
-
-    raise NotImplementedError('`compute_absolute_poses` function in ' +
-                              '`student_code.py` needs to be implemented')
-
-    #######################################################################
-    #                           END OF YOUR CODE                          #
-    #######################################################################
-
+    for i in range(len(iCurrTiPrev)):
+        abs_pose = [np.matmul(poses_wTi[i], np.linalg.inv(iCurrTiPrev[i]), dtype=np.float64)]
+        poses_wTi += abs_pose
     return poses_wTi
 
 ####################################### DO NOT MODIFY THE CODES BELOW #########################################################
