@@ -232,6 +232,12 @@ def compute_fundamental_matrix_ransac(img1_path, img2_path, img1_scale, img2_sca
     -   F_ransac: Fundamental matrix estimated using RANSAC    
     """
 
+    imga = load_image(img1_path)
+    imgb = load_image(img2_path)
+    imga_scaled = cv2.resize(imga, (0, 0), fx=img1_scale, fy=img1_scale)
+    imgb_scaled = cv2.resize(imgb, (0, 0), fx=img2_scale, fy=img2_scale)
+    points_a, points_b = get_matches(imga_scaled, imgb_scaled, num_features)
+    F_wo_ransac = estimate_fundamental_matrix(points_a, points_b)
     
 
     return match_image, match_image_ransac, points_2d_pic_a, points_2d_pic_b, matched_points_a, matched_points_b, pic_a, pic_b, F_wo_ransac, F_ransac
@@ -256,16 +262,6 @@ def get_visual_odometry(images_path) -> List[np.ndarray]:
     """
     img_fpaths = []
 
-    #######################################################################
-    # TODO: YOUR CODE HERE                                                #
-    #######################################################################
-
-    raise NotImplementedError('`get_visual_odometry` function in ' +
-                              '`student_code.py` needs to be implemented')
-
-    #######################################################################
-    #                           END OF YOUR CODE                          #
-    #######################################################################
 
     num_imgs = len(img_fpaths)
     K = load_log_front_center_intrinsics()
