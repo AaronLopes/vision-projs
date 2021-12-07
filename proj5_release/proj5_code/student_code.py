@@ -438,7 +438,7 @@ def hstack_images(imgA: np.ndarray, imgB: np.ndarray) -> np.ndarray:
     Width = imgA.shape[1] + imgB.shape[1]
 
     newImg = np.zeros((Height, Width, 3), dtype=imgA.dtype)
-    newImg[: imgA.shape[0], : imgA.shape[1], :] = imgA
+    newImg[: imgA.shape[0], :imgA.shape[1], :] = imgA
     newImg[: imgB.shape[0], imgA.shape[1]:, :] = imgB
 
     return newImg
