@@ -144,16 +144,16 @@ def check_hand_inside_bounding_box(hand, pts):
     """
 
     inside = None
-    ############################################################################
-    # TODO: YOUR CODE HERE
-    ############################################################################
-    
-    raise NotImplementedError('`check_hand_inside_bounding_box` function in '
-                                   + 'intersection.py needs to be implemented')
-    ############################################################################
-    #                             END OF YOUR CODE
-    ############################################################################
-
+    pts = pts[:, :3]
+    min_points = np.amin(pts, 0)
+    hand = hand - min_points
+    pts = pts - min_points
+    for p in pts:
+        x, y, z = hand[0], hand[1], hand[2]
+        if x >= 0 and x <= p[0] and y >= 0 and y <= p[1] and z >= 0 and z <= p[2]:
+            inside = True
+        else:
+            inside = False
     return inside
 
 
